@@ -11,7 +11,7 @@ export default async function CrewLayout({ children, params }: { children: React
   return (
     <main className="wrap">
       <Brand tagline={d.crew.name}>
-        <WhoAmI name={d.myName} extra={<Link className="linkish" href="/">Crews</Link>} />
+        <WhoAmI name={d.myName} extra={<Link className="linkish" href="/crews">Crews</Link>} />
       </Brand>
       <TabsNav crewId={crewId} badge={badge} />
       <LiveRefresh crewId={crewId} />

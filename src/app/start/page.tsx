@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createCrew, joinCrew } from "@/app/actions";
 import { ActionForm, SubmitButton } from "@/components/forms";
 import { Brand, WhoAmI } from "@/components/shell";
@@ -7,7 +8,7 @@ export default async function StartPage() {
   const { profile } = await requireUser("/start");
   return (
     <main className="wrap narrow">
-      <Brand><WhoAmI name={profile.display_name} /></Brand>
+      <Brand><WhoAmI name={profile.display_name} extra={<Link className="linkish" href="/crews">Crews</Link>} /></Brand>
       <div className="section">
         <div className="section-head"><h2>Start a crew</h2></div>
         <ActionForm action={createCrew}>
