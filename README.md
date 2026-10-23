@@ -17,7 +17,7 @@ Built with Next.js and Supabase (Postgres, email sign-in, realtime). The rules o
 ### 1. Create the database (Supabase)
 
 1. Sign up at [supabase.com](https://supabase.com) and create a new project (the free plan is fine). Save the database password somewhere, though you won't need it for this.
-2. Open **SQL Editor**, paste the whole contents of `supabase/migrations/0001_init.sql`, and click **Run**. You should see "Success. No rows returned."
+2. Open **SQL Editor**, paste the whole contents of `supabase/migrations/0001_init.sql`, and click **Run**. You should see "Success. No rows returned." Then do the same with `0002_google_names.sql`.
 3. Open **Project Settings → API Keys** (or the **Connect** button) and copy:
    - the **Project URL** (looks like `https://abcd1234.supabase.co`)
    - the **publishable key** (starts with `sb_publishable_`). On older projects this is the **anon** key, which also works.
@@ -47,7 +47,22 @@ Built with Next.js and Supabase (Postgres, email sign-in, realtime). The rules o
    <p>Or tap this link: <a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email">Sign in</a></p>
    ```
 
-That's it. Open your Vercel URL, sign in with your email, start a crew, and send the invite link from the **Crew** tab to your friends.
+### 4. Turn on "Continue with Google" (recommended)
+
+Google sign-in means no emails at all, so no email limits. It takes about 5 minutes in Google Cloud.
+
+1. In Supabase, open **Authentication → Sign In / Providers → Google** and copy the **Callback URL** it shows (looks like `https://abcd1234.supabase.co/auth/v1/callback`). Leave the tab open.
+2. Go to [console.cloud.google.com](https://console.cloud.google.com), create a project (name it "Anytimers").
+3. Open **Google Auth Platform** (or **APIs & Services → OAuth consent screen**) and fill in the branding: app name "Anytimer Tab", your email as support and developer contact, audience **External**.
+4. Under **Audience**, click **Publish app** so anyone can sign in. (In "Testing" mode only people you list by email can.) It only asks for name and email, so Google doesn't need to review it.
+5. Under **Clients**, **Create client** → **Web application**:
+   - **Authorized JavaScript origins**: your Vercel URL, e.g. `https://anytimers.vercel.app`
+   - **Authorized redirect URIs**: the Supabase Callback URL from step 1
+6. Copy the **Client ID** and **Client secret** into the Supabase Google provider, switch it on, and save.
+
+Tip: Google blocks sign-in inside some apps' built-in browsers (Instagram, Facebook Messenger). If a friend sees "disallowed_useragent", have them open the link in Safari or Chrome.
+
+That's it. Open your Vercel URL, sign in, start a crew, and send the invite link from the **Crew** tab to your friends.
 
 ### Heads-up: email limits
 

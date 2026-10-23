@@ -10,7 +10,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   return (
     <main className="wrap narrow">
       <Brand />
-      {error && <p className="notice">That sign-in link didn&apos;t work. It may have expired or been opened in a different browser. Enter your email again and use the code instead.</p>}
+      {error && <p className="notice">Sign-in didn&apos;t go through. Try again, or use the other sign-in option.</p>}
       <LoginForm next={safeNext(next)} />
     </main>
   );

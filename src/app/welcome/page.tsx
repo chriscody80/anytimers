@@ -25,7 +25,7 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
         <div className="field">
           <label className="label" htmlFor="name">Name</label>
           <input id="name" name="name" type="text" maxLength={40} autoComplete="nickname"
-            defaultValue={profile?.onboarded ? profile.display_name : ""} placeholder="First name or nickname" />
+            defaultValue={profile?.display_name ?? ""} placeholder="First name or nickname" />
         </div>
         <div className="actions"><SubmitButton>Continue</SubmitButton></div>
       </ActionForm>
