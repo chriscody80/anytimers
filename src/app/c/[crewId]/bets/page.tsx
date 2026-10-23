@@ -143,7 +143,7 @@ export default async function BetsPage({ params }: { params: Promise<{ crewId: s
           {done.map((b) => {
             let pill, line;
             if (b.status === "settled") {
-              pill = <span className="pill won">{n(b.winner)} won</span>;
+              pill = <span className={`pill ${loserOf(b) === me ? "lost" : "won"}`}>{n(b.winner)} won</span>;
               line = `${n(loserOf(b))} owes ${b.stakes} × 12 oz`;
             } else if (b.status === "push") { pill = <span className="pill">Push</span>; line = "Nobody owes"; }
             else if (b.status === "declined") { pill = <span className="pill">Passed</span>; line = `${n(b.opponent)} didn't take it`; }
