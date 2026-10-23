@@ -4,6 +4,15 @@ import { SUPABASE_KEY, SUPABASE_URL, supabaseConfigured } from "@/lib/supabase/e
 
 // Keeps the Supabase session fresh on every request.
 export async function proxy(request: NextRequest) {
+  // If Supabase sends a sign-in link to the wrong page (e.g. the home page when the
+  // redirect URL isn't allow-listed), forward it to the callback that completes sign-in.
+  const url = request.nextUrl;
+  if (url.pathname !== "/auth/callback" && (url.searchParams.has("code") || url.searchParams.has("token_hash"))) {
+    const to = url.clone();
+    to.pathname = "/auth/callback";
+    return NextResponse.redirect(to);
+  }
+
   let response = NextResponse.next({ request });
   if (!supabaseConfigured) return response;
 

@@ -39,12 +39,12 @@ Built with Next.js and Supabase (Postgres, email sign-in, realtime). The rules o
 1. **Authentication → URL Configuration**
    - **Site URL**: your Vercel URL
    - **Redirect URLs**: add `https://YOUR-VERCEL-URL/auth/callback`
-2. **Authentication → Emails**: edit **both** the **Confirm signup** template (sent the first time someone signs in) and the **Magic Link** template (sent every time after). Replace each body with this so the email includes a 6-digit code. The code is the reliable way to sign in on phones, where email links often open in a different browser.
+2. **Authentication → Emails**: edit **both** the **Confirm signup** template (sent the first time someone signs in) and the **Magic Link** template (sent every time after). Replace each body with this so the email includes a 6-digit code. This link works in any browser (Supabase's default link only works in the browser where you asked for the email), and the code is a backup.
 
    ```html
    <h2>Your Anytimer Tab sign-in</h2>
    <p>Your code: <strong style="font-size:22px;letter-spacing:3px">{{ .Token }}</strong></p>
-   <p>Or tap this link on the same device: <a href="{{ .ConfirmationURL }}">Sign in</a></p>
+   <p>Or tap this link: <a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email">Sign in</a></p>
    ```
 
 That's it. Open your Vercel URL, sign in with your email, start a crew, and send the invite link from the **Crew** tab to your friends.
