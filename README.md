@@ -6,6 +6,7 @@ Track bets with your friends and who holds anytimers on whom. One anytimer = the
 - **Bets**: you challenge a friend, they accept, either side reports the result, and the other side confirms it. A confirmed win issues the anytimers automatically.
 - **Anytimers**: the holder calls one in, and the person who owes taps "Done, I drank it" (or the holder marks it done).
 - **Live**: everyone's screen updates when anything changes.
+- **Photos**: proof of every 12 oz. Either person on a paid anytimer can add up to 4 photos; they show in the feed and on the crew's photo wall. Photos are private to the crew and shrunk on the phone before upload.
 - **House rules** page per crew, standings, and a recent-activity feed.
 
 Built with Next.js and Supabase (Postgres, email sign-in, realtime). The rules of the game are enforced in the database (`supabase/migrations/0001_init.sql`), so nobody can fake a bet from the browser.
@@ -17,7 +18,7 @@ Built with Next.js and Supabase (Postgres, email sign-in, realtime). The rules o
 ### 1. Create the database (Supabase)
 
 1. Sign up at [supabase.com](https://supabase.com) and create a new project (the free plan is fine). Save the database password somewhere, though you won't need it for this.
-2. Open **SQL Editor**, paste the whole contents of `supabase/migrations/0001_init.sql`, and click **Run**. You should see "Success. No rows returned." Then do the same with `0002_google_names.sql`.
+2. Open **SQL Editor**, paste the whole contents of `supabase/migrations/0001_init.sql`, and click **Run**. You should see "Success. No rows returned." Then do the same, in order, with every other file in that folder (`0002_google_names.sql`, `0003_drink_photos.sql`, …). Each new feature that needs a database change comes as a new numbered file you run once.
 3. Open **Project Settings → API Keys** (or the **Connect** button) and copy:
    - the **Project URL** (looks like `https://abcd1234.supabase.co`)
    - the **publishable key** (starts with `sb_publishable_`). On older projects this is the **anon** key, which also works.
@@ -104,4 +105,3 @@ A settled win creates one anytimer per stake: `outstanding ──call in──�
 
 - Push notifications when you're challenged or someone calls one in
 - Per-night limit on calling anytimers on the same person
-- Photo proof on settled bets

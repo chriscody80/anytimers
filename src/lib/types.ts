@@ -42,4 +42,14 @@ export type Crew = {
   created_by: string;
 };
 
+export type DrinkPhoto = {
+  id: string;
+  crew_id: string;
+  anytimer_id: string;
+  uploaded_by: string;
+  path: string;
+  created_at: string;
+  url: string | null;
+};
+
 export type ActionState = { error?: string; ok?: string } | null;

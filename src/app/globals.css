@@ -65,7 +65,7 @@ select, input[type=text], input[type=email], textarea {
 textarea { resize: vertical; min-height: 70px; }
 
 /* Tabs */
-.tabs { display: grid; grid-template-columns: repeat(4, 1fr); background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 4px; gap: 4px; }
+.tabs { display: grid; grid-template-columns: repeat(5, 1fr); background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 4px; gap: 4px; }
 .tabs a { text-align: center; text-decoration: none; padding: 9px 4px; border-radius: 9px; font-weight: 600; font-size: 14px; color: var(--muted); display: inline-flex; justify-content: center; align-items: center; gap: 6px; }
 .tabs a[aria-current="page"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
 .badge { background: var(--owe); color: #fff; font-size: 11px; font-weight: 700; min-width: 18px; height: 18px; border-radius: 9px; display: inline-grid; place-items: center; padding: 0 5px; font-family: var(--font-mono), ui-monospace, monospace; }
@@ -159,3 +159,17 @@ td.num { font-family: var(--font-mono), ui-monospace, monospace; }
 .btn-google:hover { background: #f7f8f8; }
 .or { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
 .or::before, .or::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+/* Photos */
+.gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.shot { margin: 0; overflow: hidden; display: flex; flex-direction: column; }
+.shot img { display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover; background: var(--surface-2); }
+.shot-missing { aspect-ratio: 1 / 1; display: grid; place-items: center; color: var(--muted); font-size: 13px; background: var(--surface-2); }
+.shot figcaption { padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 2px; font-size: 13px; min-width: 0; }
+.shot figcaption .who { font-size: 13px; overflow-wrap: anywhere; }
+.feed-body { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.thumbs { display: flex; gap: 6px; }
+.thumbs img { width: 56px; height: 56px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); }
+@media (max-width: 420px) {
+  .tabs a { font-size: 13px; padding: 9px 2px; }
+}

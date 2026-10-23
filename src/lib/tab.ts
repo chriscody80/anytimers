@@ -45,7 +45,7 @@ export function groupPairs(timers: Anytimer[]): Pair[] {
   return pairs.sort((a, b) => b.items.length - a.items.length);
 }
 
-export type FeedItem = { at: string; parts: (string | { name: string })[] };
+export type FeedItem = { at: string; parts: (string | { name: string })[]; anytimerId?: string };
 
 export function feed(members: Member[], bets: Bet[], timers: Anytimer[], limit = 15): FeedItem[] {
   const n = (id: string | null) => ({ name: nameOf(members, id) });
@@ -60,7 +60,7 @@ export function feed(members: Member[], bets: Bet[], timers: Anytimer[], limit =
   }
   for (const t of timers) {
     if (t.called_at && t.status === "called") out.push({ at: t.called_at, parts: [n(t.holder), " called one in on ", n(t.owes)] });
-    if (t.redeemed_at) out.push({ at: t.redeemed_at, parts: [n(t.owes), " drank 12 oz for ", n(t.holder)] });
+    if (t.redeemed_at) out.push({ at: t.redeemed_at, parts: [n(t.owes), " drank 12 oz for ", n(t.holder)], anytimerId: t.id });
   }
   return out.sort((a, b) => b.at.localeCompare(a.at)).slice(0, limit);
 }

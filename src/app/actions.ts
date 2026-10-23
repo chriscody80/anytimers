@@ -132,3 +132,13 @@ export async function markDrank(_: ActionState, fd: FormData) {
   const crew = str(fd, "crew");
   return rpc("mark_drank", { p_anytimer: str(fd, "anytimer") }, crew, "Cheers");
 }
+
+/* ---------- photos ---------- */
+
+export async function addPhotoRecord(crew: string, anytimer: string, path: string): Promise<ActionState> {
+  return rpc("add_drink_photo", { p_anytimer: anytimer, p_path: path }, crew, "Photo added");
+}
+
+export async function deletePhotoRecord(crew: string, photo: string): Promise<ActionState> {
+  return rpc("delete_drink_photo", { p_photo: photo }, crew, "Photo removed");
+}

@@ -21,6 +21,7 @@ export function LiveRefresh({ crewId }: { crewId: string }) {
       .on("postgres_changes", { event: "*", schema: "public", table: "bets", filter }, bump)
       .on("postgres_changes", { event: "*", schema: "public", table: "anytimers", filter }, bump)
       .on("postgres_changes", { event: "*", schema: "public", table: "crew_members", filter }, bump)
+      .on("postgres_changes", { event: "*", schema: "public", table: "drink_photos", filter }, bump)
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "crews", filter: `id=eq.${crewId}` }, bump)
       .subscribe();
     const onFocus = () => { if (document.visibilityState === "visible") bump(); };
@@ -40,6 +41,7 @@ export function TabsNav({ crewId, badge }: { crewId: string; badge: number }) {
   const tabs = [
     { href: base, label: "Tab" },
     { href: `${base}/bets`, label: "Bets" },
+    { href: `${base}/photos`, label: "Photos" },
     { href: `${base}/crew`, label: "Crew" },
     { href: `${base}/rules`, label: "Rules" },
   ];

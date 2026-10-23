@@ -2,7 +2,7 @@ import { cache } from "react";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "./supabase/server";
 import { supabaseConfigured } from "./supabase/env";
-import type { Anytimer, Bet, Crew, Member } from "./types";
+import type { Anytimer, Bet, Crew, DrinkPhoto, Member } from "./types";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -33,11 +33,12 @@ export const getCrewData = cache(async function getCrewData(crewId: string) {
   if (!UUID.test(crewId)) notFound();
   const { supabase, user, profile } = await requireUser(`/c/${crewId}`);
 
-  const [crewRes, memberRes, betRes, timerRes] = await Promise.all([
+  const [crewRes, memberRes, betRes, timerRes, photoRes] = await Promise.all([
     supabase.from("crews").select("id, name, invite_code, rules, created_by").eq("id", crewId).maybeSingle(),
     supabase.from("crew_members").select("user_id, role, profiles(display_name)").eq("crew_id", crewId),
     supabase.from("bets").select("*").eq("crew_id", crewId).order("created_at", { ascending: false }).limit(500),
     supabase.from("anytimers").select("*").eq("crew_id", crewId).order("created_at", { ascending: true }).limit(2000),
+    supabase.from("drink_photos").select("*").eq("crew_id", crewId).order("created_at", { ascending: false }).limit(300),
   ]);
 
   if (!crewRes.data) notFound();
@@ -49,6 +50,15 @@ export const getCrewData = cache(async function getCrewData(crewId: string) {
     })
     .sort((a, b) => a.name.localeCompare(b.name));
 
+  // Photos are private, so each one gets a short-lived signed link.
+  const photoRows = (photoRes.data ?? []) as Omit<DrinkPhoto, "url">[];
+  const urls = new Map<string, string>();
+  if (photoRows.length) {
+    const { data: signed } = await supabase.storage.from("drink-photos").createSignedUrls(photoRows.map((p) => p.path), 60 * 60 * 6);
+    for (const s of signed ?? []) if (s.path && s.signedUrl) urls.set(s.path, s.signedUrl);
+  }
+  const photos: DrinkPhoto[] = photoRows.map((p) => ({ ...p, url: urls.get(p.path) ?? null }));
+
   return {
     me: user.id,
     myName: profile.display_name,
@@ -56,5 +66,6 @@ export const getCrewData = cache(async function getCrewData(crewId: string) {
     members,
     bets: (betRes.data ?? []) as Bet[],
     timers: (timerRes.data ?? []) as Anytimer[],
+    photos,
   };
 });

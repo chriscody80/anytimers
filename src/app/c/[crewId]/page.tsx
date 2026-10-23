@@ -1,19 +1,28 @@
 import Link from "next/link";
 import { callAnytimer, cancelCall, confirmResult, markDrank, respondBet } from "@/app/actions";
 import { ActBtn } from "@/components/forms";
+import { PhotoUpload } from "@/components/photos";
 import { Chips } from "@/components/shell";
 import { getCrewData } from "@/lib/data";
 import { ago, feed, groupPairs, nameOf, needsYou, outcomeText, stats } from "@/lib/tab";
 
 export default async function TabPage({ params }: { params: Promise<{ crewId: string }> }) {
   const { crewId } = await params;
-  const { me, crew, members, bets, timers } = await getCrewData(crewId);
+  const { me, crew, members, bets, timers, photos } = await getCrewData(crewId);
   const n = (id: string | null) => nameOf(members, id);
   const inbox = needsYou(me, bets, timers);
   const mine = stats(me, bets, timers);
   const pairs = groupPairs(timers);
   const events = feed(members, bets, timers);
   const f = { crew: crew.id };
+  const photosFor = (id?: string) => (id ? photos.filter((p) => p.anytimer_id === id && p.url) : []);
+  // Drinks in the last two days that you were part of and nobody has photographed yet.
+  const recent = Date.now() - 48 * 3600_000;
+  const needsProof = timers
+    .filter((t) => t.status === "redeemed" && (t.holder === me || t.owes === me) && t.redeemed_at && new Date(t.redeemed_at).getTime() > recent)
+    .filter((t) => photosFor(t.id).length === 0)
+    .slice(-3)
+    .reverse();
 
   return (
     <section className="view">
@@ -57,6 +66,23 @@ export default async function TabPage({ params }: { params: Promise<{ crewId: st
         <div className="panel stat hold"><span className="label">You hold</span><span className="n">{mine.held}</span><span className="sub">anytimer{mine.held === 1 ? "" : "s"}</span></div>
         <div className="panel stat owe"><span className="label">You owe</span><span className="n">{mine.owed}</span><span className="sub">{mine.owed * 12} oz total</span></div>
       </div>
+
+      {needsProof.length > 0 && (
+        <div className="section">
+          <div className="section-head"><h2>Got proof?</h2></div>
+          <div className="panel list">
+            {needsProof.map((t) => (
+              <div className="row" key={t.id}>
+                <div className="row-main">
+                  <div className="who">{n(t.owes)}<span className="arrow">drank for</span>{n(t.holder)}</div>
+                  <span className="sub">{ago(t.redeemed_at)}</span>
+                </div>
+                <div className="actions"><PhotoUpload crewId={crew.id} anytimerId={t.id} /></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="section">
         <div className="section-head"><h2>Who&apos;s got what</h2>{pairs.length > 0 && <span className="count">{pairs.reduce((s, p) => s + p.items.length, 0)} unpaid</span>}</div>
@@ -133,7 +159,14 @@ export default async function TabPage({ params }: { params: Promise<{ crewId: st
               {events.map((e, i) => (
                 <li key={i}>
                   <time dateTime={e.at}>{ago(e.at)}</time>
-                  <span>{e.parts.map((p, j) => (typeof p === "string" ? <span key={j}>{p}</span> : <strong key={j}>{p.name}</strong>))}</span>
+                  <span className="feed-body">
+                    <span>{e.parts.map((p, j) => (typeof p === "string" ? <span key={j}>{p}</span> : <strong key={j}>{p.name}</strong>))}</span>
+                    {photosFor(e.anytimerId).length > 0 && (
+                      <Link href={`/c/${crew.id}/photos`} className="thumbs" aria-label="See photos">
+                        {photosFor(e.anytimerId).slice(0, 3).map((ph) => <img key={ph.id} src={ph.url!} alt="" loading="lazy" />)}
+                      </Link>
+                    )}
+                  </span>
                 </li>
               ))}
             </ul>
