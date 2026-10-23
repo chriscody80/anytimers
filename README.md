@@ -7,6 +7,7 @@ Track bets with your friends and who holds anytimers on whom. One anytimer = the
 - **Anytimers**: the holder calls one in, and the person who owes taps "Done, I drank it" (or the holder marks it done).
 - **Live**: everyone's screen updates when anything changes.
 - **Photos**: proof of every 12 oz. Either person on a paid anytimer can add up to 4 photos; they show in the feed and on the crew's photo wall. Photos are private to the crew and shrunk on the phone before upload.
+- **Notifications**: a ping when you're challenged, a result needs your confirmation, an anytimer is called on you, and more. Works on Android in Chrome and on iPhone once the app is added to the Home Screen.
 - **House rules** page per crew, standings, and a recent-activity feed.
 
 Built with Next.js and Supabase (Postgres, email sign-in, realtime). The rules of the game are enforced in the database (`supabase/migrations/0001_init.sql`), so nobody can fake a bet from the browser.
@@ -18,7 +19,7 @@ Built with Next.js and Supabase (Postgres, email sign-in, realtime). The rules o
 ### 1. Create the database (Supabase)
 
 1. Sign up at [supabase.com](https://supabase.com) and create a new project (the free plan is fine). Save the database password somewhere, though you won't need it for this.
-2. Open **SQL Editor**, paste the whole contents of `supabase/migrations/0001_init.sql`, and click **Run**. You should see "Success. No rows returned." Then do the same, in order, with every other file in that folder (`0002_google_names.sql`, `0003_drink_photos.sql`, …). Each new feature that needs a database change comes as a new numbered file you run once.
+2. Open **SQL Editor**, paste the whole contents of `supabase/migrations/0001_init.sql`, and click **Run**. You should see "Success. No rows returned." Then do the same, in order, with every other file in that folder (`0002_google_names.sql`, `0003_drink_photos.sql`, `0004_push_notifications.sql`, …). Each new feature that needs a database change comes as a new numbered file you run once.
 3. Open **Project Settings → API Keys** (or the **Connect** button) and copy:
    - the **Project URL** (looks like `https://abcd1234.supabase.co`)
    - the **publishable key** (starts with `sb_publishable_`). On older projects this is the **anon** key, which also works.
@@ -63,6 +64,20 @@ Google sign-in means no emails at all, so no email limits. It takes about 5 minu
 
 Tip: Google blocks sign-in inside some apps' built-in browsers (Instagram, Facebook Messenger). If a friend sees "disallowed_useragent", have them open the link in Safari or Chrome.
 
+### 5. Turn on notifications
+
+1. Generate signing keys once (on your computer): `npx web-push generate-vapid-keys`
+2. In Vercel → **Settings → Environment Variables**, add:
+
+   | Name | Value |
+   |---|---|
+   | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | the public key |
+   | `VAPID_PRIVATE_KEY` | the private key (keep it secret) |
+   | `VAPID_SUBJECT` | `mailto:you@example.com` |
+
+3. Redeploy (Deployments → ⋯ → Redeploy). Environment variables only take effect on a new deploy.
+4. Each person opens the app, goes to the **Crew** tab → **Notifications** → **Turn on notifications**, and taps **Allow**. On iPhone this only works from the Home Screen app: in Safari tap **Share → Add to Home Screen**, then open it from the icon.
+
 That's it. Open your Vercel URL, sign in, start a crew, and send the invite link from the **Crew** tab to your friends.
 
 ### Heads-up: email limits
@@ -103,5 +118,4 @@ A settled win creates one anytimer per stake: `outstanding ──call in──�
 
 ## Ideas for later
 
-- Push notifications when you're challenged or someone calls one in
 - Per-night limit on calling anytimers on the same person

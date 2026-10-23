@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { callAnytimer, cancelCall, confirmResult, markDrank, respondBet } from "@/app/actions";
 import { ActBtn } from "@/components/forms";
+import { NotifyBanner } from "@/components/notify";
 import { PhotoUpload } from "@/components/photos";
 import { Chips } from "@/components/shell";
 import { getCrewData } from "@/lib/data";
@@ -26,6 +27,7 @@ export default async function TabPage({ params }: { params: Promise<{ crewId: st
 
   return (
     <section className="view">
+      <NotifyBanner />
       {inbox.count > 0 && (
         <div className="section">
           <div className="section-head"><h2>Needs you</h2><span className="count">{inbox.count}</span></div>

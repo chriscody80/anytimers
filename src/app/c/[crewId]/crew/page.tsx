@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { resetInvite, saveName } from "@/app/actions";
 import { ActBtn, ActionForm, SubmitButton } from "@/components/forms";
 import { CopyInvite } from "@/components/live";
+import { NotifySettings } from "@/components/notify";
 import { getCrewData } from "@/lib/data";
 import { stats } from "@/lib/tab";
 
@@ -44,6 +45,11 @@ export default async function CrewPage({ params }: { params: Promise<{ crewId: s
             );
           })}
         </div>
+      </div>
+
+      <div className="section">
+        <div className="section-head"><h2>Notifications</h2></div>
+        <NotifySettings />
       </div>
 
       <div className="section">
