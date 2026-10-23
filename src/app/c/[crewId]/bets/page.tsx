@@ -1,4 +1,4 @@
-import { confirmResult, proposeBet, respondBet } from "@/app/actions";
+import { confirmResult, deleteBet, proposeBet, respondBet } from "@/app/actions";
 import { ActBtn, ActionForm, Stepper, SubmitButton } from "@/components/forms";
 import { ReportResult } from "@/components/report-result";
 import { getCrewData } from "@/lib/data";
@@ -11,6 +11,16 @@ export default async function BetsPage({ params }: { params: Promise<{ crewId: s
   const n = (id: string | null) => nameOf(members, id);
   const f = { crew: crew.id };
   const others = members.filter((m) => m.id !== me);
+  const isAdmin = members.find((m) => m.id === me)?.role === "admin";
+  const adminDelete = (b: Bet) =>
+    isAdmin ? (
+      <div className="actions admin-row">
+        <ActBtn action={deleteBet} fields={{ ...f, bet: b.id }} variant="text"
+          confirm={b.status === "settled" ? "Tap again: deletes the bet and its anytimers" : "Tap again to delete"}>
+          Delete bet
+        </ActBtn>
+      </div>
+    ) : null;
 
   const proposed = bets.filter((b) => b.status === "proposed");
   const live = bets.filter((b) => b.status === "open" || b.status === "pending_result");
@@ -71,6 +81,7 @@ export default async function BetsPage({ params }: { params: Promise<{ crewId: s
                     <ActBtn action={respondBet} fields={{ ...f, bet: b.id, accept: "0" }} variant="text" confirm="Tap again to withdraw">Withdraw</ActBtn>
                   </div>
                 )}
+                {adminDelete(b)}
               </div>
             ))}
           </div>
@@ -118,6 +129,7 @@ export default async function BetsPage({ params }: { params: Promise<{ crewId: s
                     <ActBtn action={confirmResult} fields={{ ...f, bet: b.id, agree: "0" }} variant="ghost">Take it back</ActBtn>
                   </div>
                 )}
+                {adminDelete(b)}
               </div>
             );
           })}
@@ -142,6 +154,7 @@ export default async function BetsPage({ params }: { params: Promise<{ crewId: s
                 <div className="wager">{b.wager}</div>
                 {b.settlement_note && <div className="sub wager">Settled: {b.settlement_note}</div>}
                 <div className="sub">{line} · {ago(b.settled_at)}</div>
+                {adminDelete(b)}
               </div>
             );
           })}

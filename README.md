@@ -19,7 +19,7 @@ Built with Next.js and Supabase (Postgres, email sign-in, realtime). The rules o
 ### 1. Create the database (Supabase)
 
 1. Sign up at [supabase.com](https://supabase.com) and create a new project (the free plan is fine). Save the database password somewhere, though you won't need it for this.
-2. Open **SQL Editor**, paste the whole contents of `supabase/migrations/0001_init.sql`, and click **Run**. You should see "Success. No rows returned." Then do the same, in order, with every other file in that folder (`0002_google_names.sql`, `0003_drink_photos.sql`, `0004_push_notifications.sql`, …). Each new feature that needs a database change comes as a new numbered file you run once.
+2. Open **SQL Editor**, paste the whole contents of `supabase/migrations/0001_init.sql`, and click **Run**. You should see "Success. No rows returned." Then do the same, in order, with every other file in that folder (`0002_google_names.sql`, `0003_drink_photos.sql`, `0004_push_notifications.sql`, `0005_admin_delete_bets.sql`, …). Each new feature that needs a database change comes as a new numbered file you run once.
 3. Open **Project Settings → API Keys** (or the **Connect** button) and copy:
    - the **Project URL** (looks like `https://abcd1234.supabase.co`)
    - the **publishable key** (starts with `sb_publishable_`). On older projects this is the **anon** key, which also works.

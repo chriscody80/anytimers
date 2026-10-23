@@ -280,3 +280,16 @@ export async function sendTestPush(): Promise<ActionState> {
   const count = await notifySelf(supabase, { title: "Anytimer Tab", body: "Notifications work. Cheers 🍺", url: "/", tag: "test" });
   return count ? { ok: "Sent. It should pop up in a few seconds." } : { error: "This device isn't registered yet. Turn notifications on first." };
 }
+
+/* ---------- admin ---------- */
+
+export async function deleteBet(_: ActionState, fd: FormData): Promise<ActionState> {
+  const crew = str(fd, "crew");
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("delete_bet", { p_bet: str(fd, "bet") });
+  if (error) return { error: friendly(error.message) };
+  const paths = (data ?? []) as string[];
+  if (paths.length) await supabase.storage.from("drink-photos").remove(paths);
+  revalidatePath(`/c/${crew}`, "layout");
+  return { ok: "Bet deleted" };
+}
