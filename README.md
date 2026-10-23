@@ -39,7 +39,7 @@ Built with Next.js and Supabase (Postgres, email sign-in, realtime). The rules o
 1. **Authentication → URL Configuration**
    - **Site URL**: your Vercel URL
    - **Redirect URLs**: add `https://YOUR-VERCEL-URL/auth/callback`
-2. **Authentication → Emails → Magic Link** (sometimes under "Templates"): replace the body with this so the email also includes a 6-digit code. The code is the reliable way to sign in on phones, where email links often open in a different browser.
+2. **Authentication → Emails**: edit **both** the **Confirm signup** template (sent the first time someone signs in) and the **Magic Link** template (sent every time after). Replace each body with this so the email includes a 6-digit code. The code is the reliable way to sign in on phones, where email links often open in a different browser.
 
    ```html
    <h2>Your Anytimer Tab sign-in</h2>
