@@ -1,0 +1,92 @@
+# Anytimer Tab
+
+Track bets with your friends and who holds anytimers on whom. One anytimer = the holder can make the loser drink a 12 oz beer, any time.
+
+- **Crews**: private groups. Only people with your invite link can join or see anything.
+- **Bets**: you challenge a friend, they accept, either side reports the result, and the other side confirms it. A confirmed win issues the anytimers automatically.
+- **Anytimers**: the holder calls one in, and the person who owes taps "Done, I drank it" (or the holder marks it done).
+- **Live**: everyone's screen updates when anything changes.
+- **House rules** page per crew, standings, and a recent-activity feed.
+
+Built with Next.js and Supabase (Postgres, email sign-in, realtime). The rules of the game are enforced in the database (`supabase/migrations/0001_init.sql`), so nobody can fake a bet from the browser.
+
+---
+
+## Put it online (about 10 minutes)
+
+### 1. Create the database (Supabase)
+
+1. Sign up at [supabase.com](https://supabase.com) and create a new project (the free plan is fine). Save the database password somewhere, though you won't need it for this.
+2. Open **SQL Editor**, paste the whole contents of `supabase/migrations/0001_init.sql`, and click **Run**. You should see "Success. No rows returned."
+3. Open **Project Settings → API Keys** (or the **Connect** button) and copy:
+   - the **Project URL** (looks like `https://abcd1234.supabase.co`)
+   - the **publishable key** (starts with `sb_publishable_`). On older projects this is the **anon** key, which also works.
+
+### 2. Put the site on Vercel
+
+1. Sign up at [vercel.com](https://vercel.com) with your GitHub account.
+2. **Add New → Project**, pick the `anytimers` repo, and open **Environment Variables**. Add:
+
+   | Name | Value |
+   |---|---|
+   | `NEXT_PUBLIC_SUPABASE_URL` | your Project URL |
+   | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | your publishable key |
+
+3. Click **Deploy**. When it finishes you get a URL like `https://anytimers-xyz.vercel.app`.
+
+### 3. Point sign-in at your site (Supabase)
+
+1. **Authentication → URL Configuration**
+   - **Site URL**: your Vercel URL
+   - **Redirect URLs**: add `https://YOUR-VERCEL-URL/auth/callback`
+2. **Authentication → Emails → Magic Link** (sometimes under "Templates"): replace the body with this so the email also includes a 6-digit code. The code is the reliable way to sign in on phones, where email links often open in a different browser.
+
+   ```html
+   <h2>Your Anytimer Tab sign-in</h2>
+   <p>Your code: <strong style="font-size:22px;letter-spacing:3px">{{ .Token }}</strong></p>
+   <p>Or tap this link on the same device: <a href="{{ .ConfirmationURL }}">Sign in</a></p>
+   ```
+
+That's it. Open your Vercel URL, sign in with your email, start a crew, and send the invite link from the **Crew** tab to your friends.
+
+### Heads-up: email limits
+
+Supabase's built-in email sender only allows a few sign-in emails per hour, which is fine for testing but can bite when the whole group signs up at once. If people see "Too many emails sent", connect a free sending service (for example Resend) under **Authentication → Emails → SMTP Settings**. People stay signed in after the first time, so this mostly matters on day one.
+
+---
+
+## Run it on your computer
+
+```bash
+cp .env.example .env.local   # then fill in the two values
+npm install
+npm run dev
+```
+
+Open http://localhost:3000. Add `http://localhost:3000/auth/callback` to Supabase's Redirect URLs if you want the email link to work locally (the code works either way).
+
+## How the pieces fit
+
+| Path | What it is |
+|---|---|
+| `supabase/migrations/0001_init.sql` | Tables, row-level security, and every game action as a database function |
+| `src/app/actions.ts` | Server actions that call those functions |
+| `src/app/c/[crewId]/` | The Tab, Bets, Crew and Rules pages |
+| `src/components/live.tsx` | Realtime refresh, tab bar, invite sharing |
+| `src/proxy.ts` | Keeps the sign-in session fresh |
+
+### Bet lifecycle
+
+```
+proposed ──accept──▶ open ──report result──▶ pending_result ──confirm──▶ settled / push / void
+    │                  ▲                            │
+    └─pass/withdraw─▶ declined/void                 └──dispute or take back──┘
+```
+
+A settled win creates one anytimer per stake: `outstanding ──call in──▶ called ──drank──▶ redeemed`.
+
+## Ideas for later
+
+- Push notifications when you're challenged or someone calls one in
+- Per-night limit on calling anytimers on the same person
+- Photo proof on settled bets
