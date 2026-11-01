@@ -22,6 +22,8 @@ export function LiveRefresh({ crewId }: { crewId: string }) {
       .on("postgres_changes", { event: "*", schema: "public", table: "anytimers", filter }, bump)
       .on("postgres_changes", { event: "*", schema: "public", table: "crew_members", filter }, bump)
       .on("postgres_changes", { event: "*", schema: "public", table: "drink_photos", filter }, bump)
+      .on("postgres_changes", { event: "*", schema: "public", table: "group_bets", filter }, bump)
+      .on("postgres_changes", { event: "*", schema: "public", table: "group_bet_players", filter }, bump)
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "crews", filter: `id=eq.${crewId}` }, bump)
       .subscribe();
     const onFocus = () => { if (document.visibilityState === "visible") bump(); };

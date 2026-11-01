@@ -7,7 +7,7 @@ import { needsYou } from "@/lib/tab";
 export default async function CrewLayout({ children, params }: { children: React.ReactNode; params: Promise<{ crewId: string }> }) {
   const { crewId } = await params;
   const d = await getCrewData(crewId);
-  const badge = needsYou(d.me, d.bets, d.timers).count;
+  const badge = needsYou(d.me, d.bets, d.timers, d.groups).count;
   return (
     <main className="wrap">
       <Brand tagline={d.crew.name}>

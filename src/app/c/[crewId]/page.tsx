@@ -1,21 +1,24 @@
 import Link from "next/link";
-import { callAnytimer, cancelCall, confirmResult, markDrank, respondBet } from "@/app/actions";
+import { callAnytimer, cancelCall, confirmGroupResult, confirmResult, markDrank, respondBet } from "@/app/actions";
 import { ActBtn } from "@/components/forms";
+import { GroupBetCard } from "@/components/group-bet";
 import { NotifyBanner } from "@/components/notify";
 import { PhotoUpload } from "@/components/photos";
 import { Chips, Sides } from "@/components/shell";
 import { getCrewData } from "@/lib/data";
-import { ago, feed, groupPairs, nameOf, needsYou, outcomeText, sideOf, stats, upForGrabs } from "@/lib/tab";
+import { ago, feed, groupClaimText, groupPairs, groupsToJoin, nameOf, needsYou, outcomeText, sideOf, sourceTitle, stats, upForGrabs } from "@/lib/tab";
 
 export default async function TabPage({ params }: { params: Promise<{ crewId: string }> }) {
   const { crewId } = await params;
-  const { me, crew, members, bets, timers, photos } = await getCrewData(crewId);
+  const { me, crew, members, bets, timers, photos, groups } = await getCrewData(crewId);
   const n = (id: string | null) => nameOf(members, id);
-  const inbox = needsYou(me, bets, timers);
+  const inbox = needsYou(me, bets, timers, groups);
   const grabs = upForGrabs(me, bets);
-  const mine = stats(me, bets, timers);
+  const joinable = groupsToJoin(me, groups);
+  const isAdmin = members.find((m) => m.id === me)?.role === "admin";
+  const mine = stats(me, bets, timers, groups);
   const pairs = groupPairs(timers);
-  const events = feed(members, bets, timers);
+  const events = feed(members, bets, timers, 15, groups);
   const f = { crew: crew.id };
   const photosFor = (id?: string) => (id ? photos.filter((p) => p.anytimer_id === id && p.url) : []);
   // Drinks in the last two days that you were part of and nobody has photographed yet.
@@ -36,7 +39,7 @@ export default async function TabPage({ params }: { params: Promise<{ crewId: st
             {inbox.calledOnMe.map((t) => (
               <div className="row" key={t.id}>
                 <div className="row-main"><div className="who">{n(t.holder)} called one in on you</div><Chips total={1} called={1} /></div>
-                <div className="sub wager">From: {bets.find((b) => b.id === t.bet_id)?.wager ?? "a bet"} · {ago(t.called_at)}</div>
+                <div className="sub wager">From: {sourceTitle(t, bets, groups)} · {ago(t.called_at)}</div>
                 <div className="actions"><ActBtn action={markDrank} fields={{ ...f, anytimer: t.id }}>Done, I drank it</ActBtn></div>
               </div>
             ))}
@@ -63,14 +66,26 @@ export default async function TabPage({ params }: { params: Promise<{ crewId: st
                 </div>
               </div>
             ))}
+            {inbox.groupsToConfirm.map((g) => (
+              <div className="row" key={g.id}>
+                <div className="row-main"><div className="who">{n(g.claimed_by)} says {groupClaimText(members, g)}</div><span className="pill open">Group</span></div>
+                <div className="wager">{g.title}</div>
+                {g.settlement_note && <div className="sub wager">&ldquo;{g.settlement_note}&rdquo;</div>}
+                <div className="actions">
+                  <ActBtn action={confirmGroupResult} fields={{ ...f, group: g.id, agree: "1" }}>Confirm</ActBtn>
+                  <ActBtn action={confirmGroupResult} fields={{ ...f, group: g.id, agree: "0" }} variant="ghost">Dispute</ActBtn>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
 
-      {grabs.length > 0 && (
+      {(grabs.length > 0 || joinable.length > 0) && (
         <div className="section">
-          <div className="section-head"><h2>Up for grabs</h2><span className="count">{grabs.length}</span></div>
+          <div className="section-head"><h2>Up for grabs</h2><span className="count">{grabs.length + joinable.length}</span></div>
           <div className="panel list">
+            {joinable.map((g) => <GroupBetCard key={g.id} g={g} me={me} members={members} isAdmin={isAdmin} />)}
             {grabs.map((b) => (
               <div className="row" key={b.id}>
                 <div className="row-main"><div className="who">{n(b.proposer)} wants a taker</div><span className="pill grab">{b.stakes} × 12 oz</span></div>
@@ -159,7 +174,7 @@ export default async function TabPage({ params }: { params: Promise<{ crewId: st
             <thead><tr><th>Name</th><th>Holds</th><th>Owes</th><th>W–L</th><th>Drank</th></tr></thead>
             <tbody>
               {members
-                .map((m) => ({ m, s: stats(m.id, bets, timers) }))
+                .map((m) => ({ m, s: stats(m.id, bets, timers, groups) }))
                 .sort((a, b) => (b.s.held - b.s.owed) - (a.s.held - a.s.owed) || b.s.w - a.s.w || a.m.name.localeCompare(b.m.name))
                 .map(({ m, s }) => (
                   <tr key={m.id}>

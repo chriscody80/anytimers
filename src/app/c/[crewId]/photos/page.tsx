@@ -1,10 +1,10 @@
 import { DeletePhoto, PhotoUpload } from "@/components/photos";
 import { getCrewData } from "@/lib/data";
-import { ago, nameOf } from "@/lib/tab";
+import { ago, nameOf, sourceTitle } from "@/lib/tab";
 
 export default async function PhotosPage({ params }: { params: Promise<{ crewId: string }> }) {
   const { crewId } = await params;
-  const { me, crew, members, bets, timers, photos } = await getCrewData(crewId);
+  const { me, crew, members, bets, timers, photos, groups } = await getCrewData(crewId);
   const n = (id: string | null) => nameOf(members, id);
   const byTimer = new Map(timers.map((t) => [t.id, t]));
   const countFor = (id: string) => photos.filter((p) => p.anytimer_id === id).length;
@@ -29,7 +29,7 @@ export default async function PhotosPage({ params }: { params: Promise<{ crewId:
                 <div className="who">{n(t.owes)}<span className="arrow">drank for</span>{n(t.holder)}</div>
                 <span className="sub">{ago(t.redeemed_at)}</span>
               </div>
-              <div className="sub wager">From: {bets.find((b) => b.id === t.bet_id)?.wager ?? "a bet"}{countFor(t.id) ? ` · ${countFor(t.id)} photo${countFor(t.id) === 1 ? "" : "s"}` : ""}</div>
+              <div className="sub wager">From: {sourceTitle(t, bets, groups)}{countFor(t.id) ? ` · ${countFor(t.id)} photo${countFor(t.id) === 1 ? "" : "s"}` : ""}</div>
               <div className="actions"><PhotoUpload crewId={crew.id} anytimerId={t.id} label={countFor(t.id) ? "Add another" : "Add photo"} /></div>
             </div>
           ))}

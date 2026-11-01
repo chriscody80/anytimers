@@ -6,7 +6,7 @@ import { after } from "next/server";
 import { notifyCrew, notifySelf, pushConfigured, type PushMessage } from "@/lib/push";
 import { createClient } from "@/lib/supabase/server";
 import { outcomeText, safeNext } from "@/lib/tab";
-import type { ActionState, Anytimer, Bet, Member } from "@/lib/types";
+import type { ActionState, Anytimer, Bet, GroupBet, GroupPlayer, Member } from "@/lib/types";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
@@ -308,4 +308,134 @@ export async function deleteBet(_: ActionState, fd: FormData): Promise<ActionSta
   if (paths.length) await supabase.storage.from("drink-photos").remove(paths);
   revalidatePath(`/c/${crew}`, "layout");
   return { ok: "Bet deleted" };
+}
+
+/* ---------- group bets ---------- */
+
+async function getGroup(supabase: Supabase, id: string) {
+  const [{ data: g }, { data: players }] = await Promise.all([
+    supabase.from("group_bets").select("*").eq("id", id).maybeSingle(),
+    supabase.from("group_bet_players").select("user_id, pick, is_loser").eq("group_bet_id", id),
+  ]);
+  if (!g) return null;
+  return { ...(g as GroupBet), players: (players ?? []) as Pick<GroupPlayer, "user_id" | "pick" | "is_loser">[] };
+}
+
+function groupClaim(g: { options: string[]; claimed_outcome: string | null; claimed_option: number | null; claimed_losers: string[] | null }, name: (id: string) => string) {
+  if (g.claimed_outcome === "void") return "it's off";
+  if (g.options.length && g.claimed_option != null) return `${g.options[g.claimed_option]} won`;
+  const losers = (g.claimed_losers ?? []).map(name);
+  return losers.length === 1 ? `${losers[0]} lost` : `${losers.slice(0, -1).join(", ")} and ${losers[losers.length - 1]} lost`;
+}
+
+export async function createGroupBet(_: ActionState, fd: FormData): Promise<ActionState> {
+  const crew = str(fd, "crew");
+  const title = str(fd, "title");
+  const options = fd.getAll("option").map((o) => String(o).trim()).filter(Boolean);
+  const pickRaw = str(fd, "my_pick");
+  const stakes = Math.max(1, Math.min(5, Number(fd.get("stakes")) || 1));
+  if (!title) return { error: "Write what the group is betting on." };
+  if (title.length > 280) return { error: "Keep it under 280 characters." };
+  if (options.length === 1) return { error: "Add at least 2 options, or remove the one you wrote." };
+  if (options.length && pickRaw === "") return { error: "Pick your option." };
+  const supabase = await createClient();
+  return rpc(supabase, "create_group_bet",
+    { p_crew: crew, p_title: title, p_options: options, p_stakes: stakes, p_my_pick: options.length ? Number(pickRaw) : null },
+    crew, "Group bet sent. People can join until you lock it.",
+    async (id) => {
+      const c = await crewNames(supabase, crew);
+      await send(supabase, crew, c.members.map((m) => m.id).filter((x) => x !== c.me), {
+        title: `${c.meName} started a group bet`,
+        body: `${clip(title, 70)}${options.length ? ` · ${options.join(" / ")}` : ""} · Join before it locks`,
+        url: `/c/${crew}/bets`, tag: `group-${id}`,
+      });
+    });
+}
+
+export async function joinGroupBet(_: ActionState, fd: FormData) {
+  const crew = str(fd, "crew");
+  const pick = str(fd, "pick");
+  return rpc(await createClient(), "join_group_bet", { p_bet: str(fd, "group"), p_pick: pick === "" ? null : Number(pick) }, crew, "You're in");
+}
+
+export async function leaveGroupBet(_: ActionState, fd: FormData) {
+  const crew = str(fd, "crew");
+  return rpc(await createClient(), "leave_group_bet", { p_bet: str(fd, "group") }, crew, "You're out");
+}
+
+export async function lockGroupBet(_: ActionState, fd: FormData) {
+  const crew = str(fd, "crew");
+  const id = str(fd, "group");
+  const supabase = await createClient();
+  return rpc(supabase, "lock_group_bet", { p_bet: id }, crew, "Locked", async () => {
+    const [g, c] = await Promise.all([getGroup(supabase, id), crewNames(supabase, crew)]);
+    if (!g) return;
+    await send(supabase, crew, g.players.map((p) => p.user_id), {
+      title: `${c.meName} locked the group bet`, body: `${clip(g.title, 80)} · ${g.players.length} players · good luck`, url: `/c/${crew}/bets`, tag: `group-${id}`,
+    });
+  });
+}
+
+export async function voidGroupBet(_: ActionState, fd: FormData) {
+  const crew = str(fd, "crew");
+  return rpc(await createClient(), "void_group_bet", { p_bet: str(fd, "group") }, crew, "Called off");
+}
+
+export async function claimGroupResult(_: ActionState, fd: FormData): Promise<ActionState> {
+  const crew = str(fd, "crew");
+  const id = str(fd, "group");
+  const outcome = str(fd, "outcome") === "void" ? "void" : "result";
+  const option = str(fd, "option");
+  const losers = fd.getAll("loser").map(String).filter(Boolean);
+  if (outcome === "result" && option === "" && losers.length === 0) return { error: "Pick the winning option, or check off who lost." };
+  const supabase = await createClient();
+  return rpc(supabase, "claim_group_result",
+    { p_bet: id, p_outcome: outcome, p_option: option === "" ? null : Number(option), p_losers: losers.length ? losers : null, p_note: str(fd, "note") },
+    crew, "Result sent. Someone else in the bet needs to confirm.",
+    async () => {
+      const [g, c] = await Promise.all([getGroup(supabase, id), crewNames(supabase, crew)]);
+      if (!g) return;
+      await send(supabase, crew, g.players.map((p) => p.user_id), {
+        title: `${c.meName} says ${groupClaim(g, c.name)}`, body: `Confirm or dispute: ${clip(g.title, 80)}`, url: `/c/${crew}`, tag: `group-${id}`,
+      });
+    });
+}
+
+export async function confirmGroupResult(_: ActionState, fd: FormData) {
+  const crew = str(fd, "crew");
+  const id = str(fd, "group");
+  const agree = str(fd, "agree") === "1";
+  const supabase = await createClient();
+  const before = await getGroup(supabase, id); // a dispute clears the claim, so read it first
+  return rpc(supabase, "confirm_group_result", { p_bet: id, p_agree: agree }, crew, agree ? "Settled" : "Sent back. Report the result again.", async () => {
+    if (!before?.claimed_by) return;
+    const c = await crewNames(supabase, crew);
+    if (!agree) {
+      if (c.me !== before.claimed_by) {
+        await send(supabase, crew, [before.claimed_by], { title: `${c.meName} disputed the result`, body: clip(before.title), url: `/c/${crew}/bets`, tag: `group-${id}` });
+      }
+      return;
+    }
+    const after = await getGroup(supabase, id);
+    if (!after) return;
+    const losers = after.players.filter((p) => p.is_loser).map((p) => p.user_id);
+    const winners = after.players.filter((p) => p.is_loser === false).length;
+    const body = after.status === "void"
+      ? `Called off: ${clip(after.title, 80)}`
+      : !losers.length || !winners
+        ? `Nobody owes: ${clip(after.title, 80)}`
+        : `${losers.map(c.name).join(", ")} owe${losers.length === 1 ? "s" : ""} ${after.stakes} to each winner · ${clip(after.title, 60)}`;
+    await send(supabase, crew, after.players.map((p) => p.user_id), { title: "Group bet settled", body, url: `/c/${crew}`, tag: `group-${id}` });
+  });
+}
+
+export async function deleteGroupBet(_: ActionState, fd: FormData): Promise<ActionState> {
+  const crew = str(fd, "crew");
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("delete_group_bet", { p_bet: str(fd, "group") });
+  if (error) return { error: friendly(error.message) };
+  const paths = (data ?? []) as string[];
+  if (paths.length) await supabase.storage.from("drink-photos").remove(paths);
+  revalidatePath(`/c/${crew}`, "layout");
+  return { ok: "Group bet deleted" };
 }

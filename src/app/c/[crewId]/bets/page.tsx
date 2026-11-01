@@ -1,6 +1,8 @@
 import { confirmResult, deleteBet, proposeBet, respondBet } from "@/app/actions";
 import { ActBtn, ActionForm, Stepper, SubmitButton } from "@/components/forms";
 import { Sides } from "@/components/shell";
+import { GroupBetCard } from "@/components/group-bet";
+import { GroupBetForm, NewBetSwitch } from "@/components/group-forms";
 import { ReportResult } from "@/components/report-result";
 import { getCrewData } from "@/lib/data";
 import { ago, loserOf, nameOf, otherParty, outcomeText, sideOf } from "@/lib/tab";
@@ -8,7 +10,7 @@ import type { Bet } from "@/lib/types";
 
 export default async function BetsPage({ params }: { params: Promise<{ crewId: string }> }) {
   const { crewId } = await params;
-  const { me, crew, members, bets } = await getCrewData(crewId);
+  const { me, crew, members, bets, groups } = await getCrewData(crewId);
   const n = (id: string | null) => nameOf(members, id);
   const f = { crew: crew.id };
   const others = members.filter((m) => m.id !== me);
@@ -28,6 +30,13 @@ export default async function BetsPage({ params }: { params: Promise<{ crewId: s
   const done = bets
     .filter((b) => ["settled", "push", "void", "declined"].includes(b.status))
     .sort((a, b) => (b.settled_at ?? "").localeCompare(a.settled_at ?? ""));
+  const activeGroups = groups.filter((g) => g.status !== "settled" && g.status !== "void");
+  const doneGroups = groups.filter((g) => g.status === "settled" || g.status === "void");
+  // Settled list mixes 1-on-1 and group bets, newest first.
+  const finished = [
+    ...done.map((b) => ({ kind: "bet" as const, at: b.settled_at ?? b.created_at, b })),
+    ...doneGroups.map((g) => ({ kind: "group" as const, at: g.settled_at ?? g.created_at, g })),
+  ].sort((x, y) => y.at.localeCompare(x.at));
 
   const head = (b: Bet) => (
     <div className="who">
@@ -44,39 +53,44 @@ export default async function BetsPage({ params }: { params: Promise<{ crewId: s
 
   return (
     <section className="view">
-      <div className="section">
-        <div className="section-head"><h2>New bet</h2></div>
-        {others.length === 0 ? (
+      {others.length === 0 ? (
+        <div className="section">
+          <div className="section-head"><h2>New bet</h2></div>
           <p className="notice">Invite someone on the Crew tab first. You need at least one other person to bet.</p>
-        ) : (
-          <ActionForm action={proposeBet} fields={f} resetOnOk>
-            <div className="field">
-              <label className="label" htmlFor="opponent">You vs</label>
-              <select id="opponent" name="opponent" defaultValue="">
-                <option value="" disabled>Pick a friend or the whole crew</option>
-                <option value="all">Whole crew (first to take it)</option>
-                {others.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-              </select>
-            </div>
-            <div className="field">
-              <label className="label" htmlFor="wager">What&apos;s the bet?</label>
-              <textarea id="wager" name="wager" rows={2} maxLength={280} placeholder="Giants vs Cowboys, Sunday" />
-            </div>
-            <div className="two-col">
-              <div className="field">
-                <label className="label" htmlFor="my_side">Your side</label>
-                <input id="my_side" name="my_side" type="text" maxLength={80} placeholder="Giants -3" />
-              </div>
-              <div className="field">
-                <label className="label" htmlFor="their_side">Their side</label>
-                <input id="their_side" name="their_side" type="text" maxLength={80} placeholder="Cowboys +3 (optional)" />
-              </div>
-            </div>
-            <Stepper name="stakes" label="Anytimers to the winner" />
-            <div className="actions"><SubmitButton>Send bet</SubmitButton></div>
-          </ActionForm>
-        )}
-      </div>
+        </div>
+      ) : (
+        <NewBetSwitch
+          one={
+            <ActionForm action={proposeBet} fields={f} resetOnOk>
+                  <div className="field">
+                    <label className="label" htmlFor="opponent">You vs</label>
+                    <select id="opponent" name="opponent" defaultValue="">
+                      <option value="" disabled>Pick a friend or the whole crew</option>
+                      <option value="all">Whole crew (first to take it)</option>
+                      {others.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                    </select>
+                  </div>
+                  <div className="field">
+                    <label className="label" htmlFor="wager">What&apos;s the bet?</label>
+                    <textarea id="wager" name="wager" rows={2} maxLength={280} placeholder="Giants vs Cowboys, Sunday" />
+                  </div>
+                  <div className="two-col">
+                    <div className="field">
+                      <label className="label" htmlFor="my_side">Your side</label>
+                      <input id="my_side" name="my_side" type="text" maxLength={80} placeholder="Giants -3" />
+                    </div>
+                    <div className="field">
+                      <label className="label" htmlFor="their_side">Their side</label>
+                      <input id="their_side" name="their_side" type="text" maxLength={80} placeholder="Cowboys +3 (optional)" />
+                    </div>
+                  </div>
+                  <Stepper name="stakes" label="Anytimers to the winner" />
+                  <div className="actions"><SubmitButton>Send bet</SubmitButton></div>
+                </ActionForm>
+          }
+          group={<GroupBetForm crew={crew.id} />}
+        />
+      )}
 
       {proposed.length > 0 && (
         <div className="section">
@@ -112,6 +126,15 @@ export default async function BetsPage({ params }: { params: Promise<{ crewId: s
                 {adminDelete(b)}
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {activeGroups.length > 0 && (
+        <div className="section">
+          <div className="section-head"><h2>Group bets</h2><span className="count">{activeGroups.length}</span></div>
+          <div className="panel list">
+            {activeGroups.map((g) => <GroupBetCard key={g.id} g={g} me={me} members={members} isAdmin={isAdmin} />)}
           </div>
         </div>
       )}
@@ -166,10 +189,12 @@ export default async function BetsPage({ params }: { params: Promise<{ crewId: s
       </div>
 
       <div className="section">
-        <div className="section-head"><h2>Settled</h2>{done.length > 0 && <span className="count">{done.length}</span>}</div>
+        <div className="section-head"><h2>Settled</h2>{finished.length > 0 && <span className="count">{finished.length}</span>}</div>
         <div className="panel list">
-          {done.length === 0 && <div className="empty">Settled bets and how they were decided land here.</div>}
-          {done.map((b) => {
+          {finished.length === 0 && <div className="empty">Settled bets and how they were decided land here.</div>}
+          {finished.map((item) => {
+            if (item.kind === "group") return <GroupBetCard key={item.g.id} g={item.g} me={me} members={members} isAdmin={isAdmin} />;
+            const b = item.b;
             let pill, line;
             if (b.status === "settled") {
               pill = <span className={`pill ${loserOf(b) === me ? "lost" : "won"}`}>{n(b.winner)} won</span>;

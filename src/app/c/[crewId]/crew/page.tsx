@@ -8,7 +8,7 @@ import { stats } from "@/lib/tab";
 
 export default async function CrewPage({ params }: { params: Promise<{ crewId: string }> }) {
   const { crewId } = await params;
-  const { me, myName, crew, members, bets, timers } = await getCrewData(crewId);
+  const { me, myName, crew, members, bets, timers, groups } = await getCrewData(crewId);
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? "";
   const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
@@ -34,7 +34,7 @@ export default async function CrewPage({ params }: { params: Promise<{ crewId: s
         <div className="section-head"><h2>The crew</h2><span className="count">{members.length}</span></div>
         <div className="panel list">
           {members.map((m) => {
-            const s = stats(m.id, bets, timers);
+            const s = stats(m.id, bets, timers, groups);
             return (
               <div className="row" key={m.id}>
                 <div className="row-main">

@@ -29,7 +29,8 @@ export type AnytimerStatus = "outstanding" | "called" | "redeemed";
 export type Anytimer = {
   id: string;
   crew_id: string;
-  bet_id: string;
+  bet_id: string | null;
+  group_bet_id: string | null;
   holder: string;
   owes: string;
   status: AnytimerStatus;
@@ -44,6 +45,37 @@ export type Crew = {
   invite_code: string;
   rules: string;
   created_by: string;
+};
+
+export type GroupBetStatus = "open" | "locked" | "pending_result" | "settled" | "void";
+
+export type GroupPlayer = {
+  group_bet_id: string;
+  user_id: string;
+  pick: number | null;
+  is_loser: boolean | null;
+  joined_at: string;
+};
+
+export type GroupBet = {
+  id: string;
+  crew_id: string;
+  creator: string;
+  title: string;
+  /** empty = losers are checked off at the end */
+  options: string[];
+  stakes: number;
+  status: GroupBetStatus;
+  claimed_outcome: "result" | "void" | null;
+  claimed_option: number | null;
+  claimed_losers: string[] | null;
+  claimed_by: string | null;
+  winning_option: number | null;
+  settlement_note: string;
+  created_at: string;
+  locked_at: string | null;
+  settled_at: string | null;
+  players: GroupPlayer[];
 };
 
 export type DrinkPhoto = {
