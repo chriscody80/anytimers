@@ -3,15 +3,16 @@ import { callAnytimer, cancelCall, confirmResult, markDrank, respondBet } from "
 import { ActBtn } from "@/components/forms";
 import { NotifyBanner } from "@/components/notify";
 import { PhotoUpload } from "@/components/photos";
-import { Chips } from "@/components/shell";
+import { Chips, Sides } from "@/components/shell";
 import { getCrewData } from "@/lib/data";
-import { ago, feed, groupPairs, nameOf, needsYou, outcomeText, stats } from "@/lib/tab";
+import { ago, feed, groupPairs, nameOf, needsYou, outcomeText, sideOf, stats, upForGrabs } from "@/lib/tab";
 
 export default async function TabPage({ params }: { params: Promise<{ crewId: string }> }) {
   const { crewId } = await params;
   const { me, crew, members, bets, timers, photos } = await getCrewData(crewId);
   const n = (id: string | null) => nameOf(members, id);
   const inbox = needsYou(me, bets, timers);
+  const grabs = upForGrabs(me, bets);
   const mine = stats(me, bets, timers);
   const pairs = groupPairs(timers);
   const events = feed(members, bets, timers);
@@ -43,6 +44,7 @@ export default async function TabPage({ params }: { params: Promise<{ crewId: st
               <div className="row" key={b.id}>
                 <div className="row-main"><div className="who">{n(b.proposer)} wants to bet you</div><span className="pill open">{b.stakes} × 12 oz</span></div>
                 <div className="wager">{b.wager}</div>
+                <Sides bet={b} members={members} me={me} />
                 <div className="actions">
                   <ActBtn action={respondBet} fields={{ ...f, bet: b.id, accept: "1" }}>Accept</ActBtn>
                   <ActBtn action={respondBet} fields={{ ...f, bet: b.id, accept: "0" }} variant="ghost">Pass</ActBtn>
@@ -53,10 +55,33 @@ export default async function TabPage({ params }: { params: Promise<{ crewId: st
               <div className="row" key={b.id}>
                 <div className="row-main"><div className="who">{n(b.claimed_by)} says {outcomeText(members, b)}</div><span className="pill open">{b.stakes} × 12 oz</span></div>
                 <div className="wager">{b.wager}</div>
+                <Sides bet={b} members={members} me={me} />
                 {b.settlement_note && <div className="sub wager">&ldquo;{b.settlement_note}&rdquo;</div>}
                 <div className="actions">
                   <ActBtn action={confirmResult} fields={{ ...f, bet: b.id, agree: "1" }}>Confirm</ActBtn>
                   <ActBtn action={confirmResult} fields={{ ...f, bet: b.id, agree: "0" }} variant="ghost">Dispute</ActBtn>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {grabs.length > 0 && (
+        <div className="section">
+          <div className="section-head"><h2>Up for grabs</h2><span className="count">{grabs.length}</span></div>
+          <div className="panel list">
+            {grabs.map((b) => (
+              <div className="row" key={b.id}>
+                <div className="row-main"><div className="who">{n(b.proposer)} wants a taker</div><span className="pill grab">{b.stakes} × 12 oz</span></div>
+                <div className="wager">{b.wager}</div>
+                <Sides bet={b} members={members} me={me} />
+                <div className="sub">Sent to the whole crew {ago(b.created_at)} · first to take it gets it</div>
+                <div className="actions">
+                  <ActBtn action={respondBet} fields={{ ...f, bet: b.id, accept: "1" }}
+                    confirm={sideOf(b, "opponent") ? `Tap again: you take ${sideOf(b, "opponent")}` : "Tap again to lock it in"}>
+                    Take it
+                  </ActBtn>
                 </div>
               </div>
             ))}

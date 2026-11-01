@@ -179,3 +179,11 @@ td.num { font-family: var(--font-mono), ui-monospace, monospace; }
 .notify-banner { display: flex; flex-direction: column; gap: 10px; }
 .steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; }
 .admin-row { justify-content: flex-end; margin-top: -4px; }
+
+/* Sides */
+.sides { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.side { background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 7px 10px; display: flex; flex-direction: column; gap: 1px; font-weight: 600; font-size: 14px; min-width: 0; overflow-wrap: anywhere; }
+.side-who { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 420px) { .two-col { grid-template-columns: 1fr; } }
+.pill.grab { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); }

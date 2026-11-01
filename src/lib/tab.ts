@@ -8,7 +8,7 @@ export function otherParty(bet: Bet, me: string) {
   return bet.proposer === me ? bet.opponent : bet.proposer;
 }
 
-export function loserOf(bet: Bet) {
+export function loserOf(bet: Bet): string | null {
   return bet.winner === bet.proposer ? bet.opponent : bet.proposer;
 }
 
@@ -51,7 +51,13 @@ export function feed(members: Member[], bets: Bet[], timers: Anytimer[], limit =
   const n = (id: string | null) => ({ name: nameOf(members, id) });
   const out: FeedItem[] = [];
   for (const b of bets) {
-    out.push({ at: b.created_at, parts: [n(b.proposer), " challenged ", n(b.opponent), `: ${b.wager}`] });
+    if (b.open_to_crew) {
+      out.push({ at: b.created_at, parts: [n(b.proposer), ` put a bet out to the crew: ${b.wager}`] });
+      if (b.opponent && b.accepted_at) out.push({ at: b.accepted_at, parts: [n(b.opponent), " took ", n(b.proposer), `'s bet: ${b.wager}`] });
+      if (!b.opponent && b.status === "void" && b.settled_at) { out.push({ at: b.settled_at, parts: [n(b.proposer), " pulled their bet before anyone took it"] }); continue; }
+    } else {
+      out.push({ at: b.created_at, parts: [n(b.proposer), " challenged ", n(b.opponent), `: ${b.wager}`] });
+    }
     if (b.status === "declined" && b.settled_at) out.push({ at: b.settled_at, parts: [n(b.opponent), " passed on a bet from ", n(b.proposer)] });
     if (b.status === "settled" && b.settled_at)
       out.push({ at: b.settled_at, parts: [n(b.winner), " beat ", n(loserOf(b)), ` for ${b.stakes} anytimer${b.stakes === 1 ? "" : "s"}`] });
@@ -95,4 +101,15 @@ export function outcomeText(members: Member[], bet: Bet) {
   if (bet.claimed_outcome === "push") return "it was a push";
   if (bet.claimed_outcome === "void") return "the bet is off";
   return `${nameOf(members, bet.claimed_winner)} won`;
+}
+
+/** Whole-crew bets nobody has taken yet that this person could take. */
+export function upForGrabs(me: string, bets: Bet[]) {
+  return bets.filter((b) => b.status === "proposed" && b.open_to_crew && !b.opponent && b.proposer !== me);
+}
+
+/** The side each person is on. The taker's side falls back to "Against …" when only one side was written. */
+export function sideOf(bet: Bet, who: "proposer" | "opponent") {
+  if (who === "proposer") return bet.proposer_side;
+  return bet.opponent_side ?? (bet.proposer_side ? `Against ${bet.proposer_side}` : null);
 }

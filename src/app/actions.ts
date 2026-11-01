@@ -134,20 +134,35 @@ export async function setRules(_: ActionState, fd: FormData) {
 
 export async function proposeBet(_: ActionState, fd: FormData): Promise<ActionState> {
   const crew = str(fd, "crew");
-  const opponent = str(fd, "opponent");
+  const pick = str(fd, "opponent");
   const wager = str(fd, "wager");
+  const mySide = str(fd, "my_side");
+  const theirSide = str(fd, "their_side");
   const stakes = Math.max(1, Math.min(10, Number(fd.get("stakes")) || 1));
-  if (!opponent) return { error: "Pick who you're betting." };
+  if (!pick) return { error: "Pick who you're betting, or the whole crew." };
   if (!wager) return { error: "Write what the bet is." };
   if (wager.length > 280) return { error: "Keep the bet under 280 characters." };
+  if (!mySide) return { error: "Write which side you're on." };
+  if (mySide.length > 80 || theirSide.length > 80) return { error: "Keep each side under 80 characters." };
+  const opponent = pick === "all" ? null : pick;
   const supabase = await createClient();
-  return rpc(supabase, "propose_bet", { p_crew: crew, p_opponent: opponent, p_wager: wager, p_stakes: stakes }, crew,
-    "Bet sent. They need to accept it.",
+  return rpc(supabase, "create_bet",
+    { p_crew: crew, p_opponent: opponent, p_wager: wager, p_stakes: stakes, p_my_side: mySide, p_their_side: theirSide },
+    crew, opponent ? "Bet sent. They need to accept it." : "Bet sent to the crew. First to take it gets it.",
     async (betId) => {
       const c = await crewNames(supabase, crew);
-      await send(supabase, crew, [opponent], {
-        title: `${c.meName} challenged you`, body: `${clip(wager)} · ${stakes} × 12 oz`, url: `/c/${crew}`, tag: `bet-${betId}`,
-      });
+      const takerSide = theirSide || `Against ${mySide}`;
+      if (opponent) {
+        await send(supabase, crew, [opponent], {
+          title: `${c.meName} challenged you`, body: `${clip(wager, 70)} · You'd take ${takerSide} · ${stakes} × 12 oz`,
+          url: `/c/${crew}`, tag: `bet-${betId}`,
+        });
+      } else {
+        await send(supabase, crew, c.members.map((m) => m.id).filter((id) => id !== c.me), {
+          title: `${c.meName} put a bet out to the crew`, body: `${clip(wager, 70)} · ${takerSide} is open · ${stakes} × 12 oz`,
+          url: `/c/${crew}`, tag: `bet-${betId}`,
+        });
+      }
     });
 }
 
@@ -160,9 +175,9 @@ export async function respondBet(_: ActionState, fd: FormData) {
     const [b, c] = await Promise.all([getBet(supabase, betId), crewNames(supabase, crew)]);
     if (!b) return;
     const msg = { body: clip(b.wager), url: `/c/${crew}/bets`, tag: `bet-${b.id}` };
-    if (accept) await send(supabase, crew, [b.proposer], { title: `${c.meName} accepted your bet`, ...msg });
+    if (accept) await send(supabase, crew, [b.proposer], { title: b.open_to_crew ? `${c.meName} took your bet` : `${c.meName} accepted your bet`, ...msg });
     else if (c.me === b.opponent) await send(supabase, crew, [b.proposer], { title: `${c.meName} passed on your bet`, ...msg });
-    else await send(supabase, crew, [b.opponent], { title: `${c.meName} withdrew their bet`, ...msg });
+    else if (b.opponent) await send(supabase, crew, [b.opponent], { title: `${c.meName} withdrew their bet`, ...msg });
   });
 }
 
@@ -180,6 +195,7 @@ export async function claimResult(_: ActionState, fd: FormData): Promise<ActionS
       const [b, c] = await Promise.all([getBet(supabase, betId), crewNames(supabase, crew)]);
       if (!b) return;
       const other = b.proposer === c.me ? b.opponent : b.proposer;
+      if (!other) return;
       await send(supabase, crew, [other], {
         title: `${c.meName} says ${outcomeText(c.members, b)}`, body: `Confirm or dispute: ${clip(b.wager)}`, url: `/c/${crew}`, tag: `bet-${b.id}`,
       });

@@ -6,7 +6,11 @@ export type Bet = {
   id: string;
   crew_id: string;
   proposer: string;
-  opponent: string;
+  /** null while a whole-crew bet is waiting for someone to take it */
+  opponent: string | null;
+  open_to_crew: boolean;
+  proposer_side: string | null;
+  opponent_side: string | null;
   wager: string;
   stakes: number;
   status: BetStatus;
