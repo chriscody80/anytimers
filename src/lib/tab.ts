@@ -158,8 +158,11 @@ export function sourceTitle(t: Anytimer, bets: Bet[], groups: GroupBet[]) {
 export function groupClaimText(members: Member[], g: GroupBet) {
   if (g.claimed_outcome === "void") return "it's off";
   if (g.options.length && g.claimed_option != null) return `${g.options[g.claimed_option]} won`;
-  const losers = (g.claimed_losers ?? []).map((id) => nameOf(members, id));
-  if (!losers.length) return "there's a result";
-  const list = losers.length === 1 ? losers[0] : `${losers.slice(0, -1).join(", ")} and ${losers[losers.length - 1]}`;
-  return `${list} lost`;
+  const list = (ids: string[]) => {
+    const names = ids.map((id) => nameOf(members, id));
+    return names.length <= 1 ? names.join("") : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+  };
+  if (!g.claimed_losers?.length) return "there's a result";
+  const lost = `${list(g.claimed_losers)} lost`;
+  return g.claimed_winners?.length ? `${list(g.claimed_winners)} won, ${lost}` : lost;
 }

@@ -69,6 +69,8 @@ export type GroupBet = {
   claimed_outcome: "result" | "void" | null;
   claimed_option: number | null;
   claimed_losers: string[] | null;
+  /** null = everyone who didn't lose won */
+  claimed_winners: string[] | null;
   claimed_by: string | null;
   winning_option: number | null;
   settlement_note: string;

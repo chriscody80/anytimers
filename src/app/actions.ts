@@ -321,11 +321,18 @@ async function getGroup(supabase: Supabase, id: string) {
   return { ...(g as GroupBet), players: (players ?? []) as Pick<GroupPlayer, "user_id" | "pick" | "is_loser">[] };
 }
 
-function groupClaim(g: { options: string[]; claimed_outcome: string | null; claimed_option: number | null; claimed_losers: string[] | null }, name: (id: string) => string) {
+function listNames(names: string[]) {
+  return names.length <= 1 ? names.join("") : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+}
+
+function groupClaim(
+  g: { options: string[]; claimed_outcome: string | null; claimed_option: number | null; claimed_losers: string[] | null; claimed_winners?: string[] | null },
+  name: (id: string) => string,
+) {
   if (g.claimed_outcome === "void") return "it's off";
   if (g.options.length && g.claimed_option != null) return `${g.options[g.claimed_option]} won`;
-  const losers = (g.claimed_losers ?? []).map(name);
-  return losers.length === 1 ? `${losers[0]} lost` : `${losers.slice(0, -1).join(", ")} and ${losers[losers.length - 1]} lost`;
+  const lost = `${listNames((g.claimed_losers ?? []).map(name))} lost`;
+  return g.claimed_winners?.length ? `${listNames(g.claimed_winners.map(name))} won, ${lost}` : lost;
 }
 
 export async function createGroupBet(_: ActionState, fd: FormData): Promise<ActionState> {
@@ -387,10 +394,13 @@ export async function claimGroupResult(_: ActionState, fd: FormData): Promise<Ac
   const outcome = str(fd, "outcome") === "void" ? "void" : "result";
   const option = str(fd, "option");
   const losers = fd.getAll("loser").map(String).filter(Boolean);
-  if (outcome === "result" && option === "" && losers.length === 0) return { error: "Pick the winning option, or check off who lost." };
+  const winners = fd.getAll("winner").map(String).filter(Boolean);
+  if (outcome === "result" && option === "" && (losers.length === 0 || winners.length === 0)) {
+    return { error: "Pick the winning option, or mark at least one winner and one loser." };
+  }
   const supabase = await createClient();
   return rpc(supabase, "claim_group_result",
-    { p_bet: id, p_outcome: outcome, p_option: option === "" ? null : Number(option), p_losers: losers.length ? losers : null, p_note: str(fd, "note") },
+    { p_bet: id, p_outcome: outcome, p_option: option === "" ? null : Number(option), p_losers: losers.length ? losers : null, p_note: str(fd, "note"), p_winners: option === "" && winners.length ? winners : null },
     crew, "Result sent. Someone else in the bet needs to confirm.",
     async () => {
       const [g, c] = await Promise.all([getGroup(supabase, id), crewNames(supabase, crew)]);

@@ -4,7 +4,7 @@ Track bets with your friends and who holds anytimers on whom. One anytimer = the
 
 - **Crews**: private groups. Only people with your invite link can join or see anything.
 - **Bets**: each bet has two sides (e.g. "Giants -3" vs "Cowboys +3"). Challenge one friend, or send it to the whole crew and the first person to take it becomes your opponent. Once accepted, either side reports the result, and the other side confirms it. A confirmed win issues the anytimers automatically.
-- **Group bets**: anyone in the crew can join until it's locked. Either everyone picks an option (wrong picks lose) or the losers are checked off at the end. One player reports the result, another confirms, and each loser owes each winner (1 to 5 anytimers per pairing).
+- **Group bets**: anyone in the crew can join until it's locked. Either everyone picks an option (wrong picks lose) or each player is marked Won, Lost or Nothing at the end (Nothing = no win, no loss). One player reports the result, another confirms, and each loser owes each winner (1 to 5 anytimers per pairing).
 - **Anytimers**: the holder calls one in, and the person who owes taps "Done, I drank it" (or the holder marks it done).
 - **Live**: everyone's screen updates when anything changes.
 - **Photos**: proof of every 12 oz. Either person on a paid anytimer can add up to 4 photos; they show in the feed and on the crew's photo wall. Photos are private to the crew and shrunk on the phone before upload.
@@ -20,7 +20,7 @@ Built with Next.js and Supabase (Postgres, email sign-in, realtime). The rules o
 ### 1. Create the database (Supabase)
 
 1. Sign up at [supabase.com](https://supabase.com) and create a new project (the free plan is fine). Save the database password somewhere, though you won't need it for this.
-2. Open **SQL Editor**, paste the whole contents of `supabase/migrations/0001_init.sql`, and click **Run**. You should see "Success. No rows returned." Then do the same, in order, with every other file in that folder (`0002_google_names.sql`, `0003_drink_photos.sql`, `0004_push_notifications.sql`, `0005_admin_delete_bets.sql`, `0006_sides_and_open_bets.sql`, `0007_group_bets.sql`, …). Each new feature that needs a database change comes as a new numbered file you run once.
+2. Open **SQL Editor**, paste the whole contents of `supabase/migrations/0001_init.sql`, and click **Run**. You should see "Success. No rows returned." Then do the same, in order, with every other file in that folder (`0002_google_names.sql`, `0003_drink_photos.sql`, `0004_push_notifications.sql`, `0005_admin_delete_bets.sql`, `0006_sides_and_open_bets.sql`, `0007_group_bets.sql`, `0008_group_winners.sql`, …). Each new feature that needs a database change comes as a new numbered file you run once.
 3. Open **Project Settings → API Keys** (or the **Connect** button) and copy:
    - the **Project URL** (looks like `https://abcd1234.supabase.co`)
    - the **publishable key** (starts with `sb_publishable_`). On older projects this is the **anon** key, which also works.

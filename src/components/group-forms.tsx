@@ -52,7 +52,7 @@ export function GroupBetForm({ crew }: { crew: string }) {
           <button type="button" aria-pressed={mode === "losers"} onClick={() => setMode("losers")}>Mark losers at the end</button>
         </div>
         <p className="sub">
-          {mode === "options" ? "Wrong picks lose." : "Good for games and contests: fantasy week, golf, beer pong."}
+          {mode === "options" ? "Wrong picks lose." : "Good for games and contests. At the end you mark who won, who lost, and who gets nothing."}
         </p>
       </div>
 
@@ -108,14 +108,17 @@ export function ReportGroupResult({
 }) {
   const [open, setOpen] = useState(false);
   const [option, setOption] = useState<number | null>(null);
-  const [losers, setLosers] = useState<string[]>([]);
+  const [marks, setMarks] = useState<Record<string, "won" | "lost" | "none">>({});
   const [off, setOff] = useState(false);
   const [state, formAction] = useActionState(claimGroupResult, null);
 
   if (!open) {
     return <button className="btn btn-primary" type="button" onClick={() => setOpen(true)}>Report result</button>;
   }
-  const ready = off || (options.length ? option != null : losers.length > 0 && losers.length < players.length);
+  const losers = players.filter((p) => marks[p.id] === "lost").map((p) => p.id);
+  const winners = players.filter((p) => marks[p.id] === "won").map((p) => p.id);
+  const ready = off || (options.length ? option != null : losers.length > 0 && winners.length > 0);
+  const mark = (id: string, v: "won" | "lost" | "none") => setMarks((m) => ({ ...m, [id]: v }));
 
   return (
     <form action={formAction} className="settle" noValidate>
@@ -123,7 +126,8 @@ export function ReportGroupResult({
       <input type="hidden" name="group" value={group} />
       <input type="hidden" name="outcome" value={off ? "void" : "result"} />
       <input type="hidden" name="option" value={!off && option != null ? String(option) : ""} />
-      {!off && losers.map((id) => <input key={id} type="hidden" name="loser" value={id} />)}
+      {!off && losers.map((id) => <input key={`l-${id}`} type="hidden" name="loser" value={id} />)}
+      {!off && winners.map((id) => <input key={`w-${id}`} type="hidden" name="winner" value={id} />)}
 
       {options.length > 0 ? (
         <>
@@ -137,18 +141,25 @@ export function ReportGroupResult({
         </>
       ) : (
         <>
-          <span className="label">Who lost?</span>
-          <div className="checks">
-            {players.map((p) => (
-              <label key={p.id} className="check">
-                <input type="checkbox" checked={!off && losers.includes(p.id)} disabled={off}
-                  onChange={(e) => setLosers((xs) => (e.target.checked ? [...xs, p.id] : xs.filter((x) => x !== p.id)))} />
-                {p.name}
-              </label>
-            ))}
+          <span className="label">Who won and who lost?</span>
+          <p className="sub">Each loser owes each winner. Anyone left on Nothing doesn&apos;t owe or collect.</p>
+          <div className="marks" aria-disabled={off}>
+            {players.map((p) => {
+              const v = marks[p.id] ?? "none";
+              return (
+                <div key={p.id} className="mark-row">
+                  <span className="mark-name">{p.name}</span>
+                  <div className="seg seg-small mark-seg" role="group" aria-label={`Result for ${p.name}`}>
+                    <button type="button" className="m-won" aria-pressed={v === "won"} disabled={off} onClick={() => mark(p.id, "won")}>Won</button>
+                    <button type="button" className="m-lost" aria-pressed={v === "lost"} disabled={off} onClick={() => mark(p.id, "lost")}>Lost</button>
+                    <button type="button" aria-pressed={v === "none"} disabled={off} onClick={() => mark(p.id, "none")}>Nothing</button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
           <div className="seg"><button type="button" aria-pressed={off} onClick={() => setOff((v) => !v)}>Call it off instead</button></div>
-          {!off && losers.length >= players.length && <p className="err">Somebody has to win. Uncheck at least one person.</p>}
+          {!off && (losers.length === 0 || winners.length === 0) && <p className="sub">Mark at least one winner and one loser.</p>}
         </>
       )}
       <div className="field">

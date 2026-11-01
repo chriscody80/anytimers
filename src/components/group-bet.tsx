@@ -27,6 +27,7 @@ export function GroupBetCard({
   const settled = g.status === "settled";
   const losers = g.players.filter((p) => p.is_loser);
   const winners = g.players.filter((p) => p.is_loser === false);
+  const even = settled ? g.players.filter((p) => p.is_loser == null) : [];
   const myResult = settled && mine ? (mine.is_loser ? "lost" : losers.length && winners.length ? "won" : null) : null;
 
   let pill = STATUS[g.status];
@@ -71,7 +72,7 @@ export function GroupBetCard({
       ) : (
         <div className="players">
           {g.players.map((p) => (
-            <span key={p.user_id} className={`player${p.is_loser ? " player-lost" : ""}${settled && p.is_loser === false ? " player-won" : ""}`}>
+            <span key={p.user_id} className={`player${p.is_loser ? " player-lost" : ""}${settled && p.is_loser === false ? " player-won" : ""}${settled && p.is_loser == null ? " player-even" : ""}`}>
               {n(p.user_id)}
             </span>
           ))}
@@ -90,6 +91,7 @@ export function GroupBetCard({
           {losers.length && winners.length
             ? `${losers.map((p) => n(p.user_id)).join(", ")} ${losers.length === 1 && losers[0].user_id !== me ? "owes" : "owe"} ${g.stakes} to each of ${winners.length} winner${winners.length === 1 ? "" : "s"}`
             : "Nobody owes"}
+          {even.length > 0 && g.options.length === 0 ? ` · ${even.map((p) => n(p.user_id)).join(", ")}: no win, no loss` : ""}
           {g.settlement_note ? ` · ${g.settlement_note}` : ""} · {ago(g.settled_at)}
         </div>
       )}

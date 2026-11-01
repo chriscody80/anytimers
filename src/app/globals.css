@@ -211,3 +211,13 @@ td.num { font-family: var(--font-mono), ui-monospace, monospace; }
 .checks { display: flex; flex-wrap: wrap; gap: 6px; }
 .check { display: inline-flex; align-items: center; gap: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; font-weight: 600; font-size: 13px; cursor: pointer; }
 .check input { width: 16px; height: 16px; accent-color: var(--owe); }
+
+/* Group results: Won / Lost / Nothing */
+.marks { display: flex; flex-direction: column; gap: 6px; }
+.marks[aria-disabled="true"] { opacity: .5; }
+.mark-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 6px 8px 6px 12px; }
+.mark-name { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.mark-seg { flex-wrap: nowrap; }
+.seg button.m-won[aria-pressed="true"] { background: var(--good); border-color: var(--good); color: #fff; }
+.seg button.m-lost[aria-pressed="true"] { background: var(--owe); border-color: var(--owe); color: #fff; }
+.player-even { color: var(--muted); border-style: dashed; }
