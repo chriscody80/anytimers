@@ -3,7 +3,7 @@
 Track bets with your friends and who holds anytimers on whom. One anytimer = the holder can make the loser drink a 12 oz beer, any time.
 
 - **Crews**: private groups. Only people with your invite link can join or see anything.
-- **Bets**: each bet has two sides (e.g. "Giants -3" vs "Cowboys +3"). Challenge one friend, or send it to the whole crew and the first person to take it becomes your opponent. Once accepted, either side reports the result, and the other side confirms it. A confirmed win issues the anytimers automatically.
+- **Bets**: Challenge one friend, or send it to the whole crew and the first person to take it becomes your opponent. Once accepted, either side reports the result, and the other side confirms it. A confirmed win issues the anytimers automatically.
 - **Group bets**: anyone in the crew can join until it's locked. Either everyone picks an option (wrong picks lose) or each player is marked Won, Lost or Nothing at the end (Nothing = no win, no loss). One player reports the result, another confirms, and each loser owes each winner (1 to 5 anytimers per pairing).
 - **Anytimers**: the holder calls one in, and the person who owes taps "Done, I drank it" (or the holder marks it done).
 - **Live**: everyone's screen updates when anything changes.

@@ -127,12 +127,6 @@ export function upForGrabs(me: string, bets: Bet[]) {
   return bets.filter((b) => b.status === "proposed" && b.open_to_crew && !b.opponent && b.proposer !== me);
 }
 
-/** The side each person is on. The taker's side falls back to "Against …" when only one side was written. */
-export function sideOf(bet: Bet, who: "proposer" | "opponent") {
-  if (who === "proposer") return bet.proposer_side;
-  return bet.opponent_side ?? (bet.proposer_side ? `Against ${bet.proposer_side}` : null);
-}
-
 /** "Chris", "Chris and Mike", "Chris, Mike and Dan" as feed parts. */
 function joinNames(names: { name: string }[]): (string | { name: string })[] {
   const out: (string | { name: string })[] = [];

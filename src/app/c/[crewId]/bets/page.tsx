@@ -1,11 +1,10 @@
 import { confirmResult, deleteBet, proposeBet, respondBet } from "@/app/actions";
 import { ActBtn, ActionForm, Stepper, SubmitButton } from "@/components/forms";
-import { Sides } from "@/components/shell";
 import { GroupBetCard } from "@/components/group-bet";
 import { GroupBetForm, NewBetSwitch } from "@/components/group-forms";
 import { ReportResult } from "@/components/report-result";
 import { getCrewData } from "@/lib/data";
-import { ago, loserOf, nameOf, otherParty, outcomeText, sideOf } from "@/lib/tab";
+import { ago, loserOf, nameOf, otherParty, outcomeText } from "@/lib/tab";
 import type { Bet } from "@/lib/types";
 
 export default async function BetsPage({ params }: { params: Promise<{ crewId: string }> }) {
@@ -45,11 +44,6 @@ export default async function BetsPage({ params }: { params: Promise<{ crewId: s
       {b.opponent ? <>{n(b.opponent)}{b.opponent === me && <span className="sub"> (you)</span>}</> : "Anyone"}
     </div>
   );
-  const sides = (b: Bet) => <Sides bet={b} members={members} me={me} />;
-  const withSide = (id: string, b: Bet) => {
-    const side = sideOf(b, id === b.proposer ? "proposer" : "opponent");
-    return `${n(id)} won${side ? ` (${side})` : ""}`;
-  };
 
   return (
     <section className="view">
@@ -74,16 +68,6 @@ export default async function BetsPage({ params }: { params: Promise<{ crewId: s
                     <label className="label" htmlFor="wager">What&apos;s the bet?</label>
                     <textarea id="wager" name="wager" rows={2} maxLength={280} placeholder="Giants vs Cowboys, Sunday" />
                   </div>
-                  <div className="two-col">
-                    <div className="field">
-                      <label className="label" htmlFor="my_side">Your side</label>
-                      <input id="my_side" name="my_side" type="text" maxLength={80} placeholder="Giants -3" />
-                    </div>
-                    <div className="field">
-                      <label className="label" htmlFor="their_side">Their side</label>
-                      <input id="their_side" name="their_side" type="text" maxLength={80} placeholder="Cowboys +3 (optional)" />
-                    </div>
-                  </div>
                   <Stepper name="stakes" label="Anytimers to the winner" />
                   <div className="actions"><SubmitButton>Send bet</SubmitButton></div>
                 </ActionForm>
@@ -100,14 +84,12 @@ export default async function BetsPage({ params }: { params: Promise<{ crewId: s
               <div className="row" key={b.id}>
                 <div className="row-main">{head(b)}<span className={`pill ${b.opponent ? "wait" : "grab"}`}>{b.stakes} × 12 oz</span></div>
                 <div className="wager">{b.wager}</div>
-                {sides(b)}
                 <div className="sub">
                   {b.opponent ? <>Sent {ago(b.created_at)} · waiting on {n(b.opponent)}</> : <>Sent to the whole crew {ago(b.created_at)} · first to take it gets it</>}
                 </div>
                 {!b.opponent && b.proposer !== me && (
                   <div className="actions">
-                    <ActBtn action={respondBet} fields={{ ...f, bet: b.id, accept: "1" }}
-                      confirm={sideOf(b, "opponent") ? `Tap again: you take ${sideOf(b, "opponent")}` : "Tap again to lock it in"}>
+                    <ActBtn action={respondBet} fields={{ ...f, bet: b.id, accept: "1" }} confirm="Tap again to lock it in">
                       Take it
                     </ActBtn>
                   </div>
@@ -150,7 +132,6 @@ export default async function BetsPage({ params }: { params: Promise<{ crewId: s
               <div className="row" key={b.id}>
                 <div className="row-main">{head(b)}<span className="pill open">{b.stakes} × 12 oz</span></div>
                 <div className="wager">{b.wager}</div>
-                {sides(b)}
                 <div className="sub">{b.open_to_crew ? "Taken" : "Accepted"} {ago(b.accepted_at)}</div>
                 {pending && (
                   <div className="sub wager">
@@ -163,8 +144,8 @@ export default async function BetsPage({ params }: { params: Promise<{ crewId: s
                     crew={crew.id}
                     bet={b.id}
                     options={[
-                      { value: b.proposer, label: withSide(b.proposer, b) },
-                      { value: b.opponent!, label: withSide(b.opponent!, b) },
+                      { value: b.proposer, label: `${n(b.proposer)} won` },
+                      { value: b.opponent!, label: `${n(b.opponent)} won` },
                       { value: "push", label: "Push" },
                       { value: "void", label: "Call it off" },
                     ]}
@@ -207,7 +188,6 @@ export default async function BetsPage({ params }: { params: Promise<{ crewId: s
               <div className="row" key={b.id}>
                 <div className="row-main">{head(b)}{pill}</div>
                 <div className="wager">{b.wager}</div>
-                {sides(b)}
                 {b.settlement_note && <div className="sub wager">Settled: {b.settlement_note}</div>}
                 <div className="sub">{line} · {ago(b.settled_at)}</div>
                 {adminDelete(b)}
